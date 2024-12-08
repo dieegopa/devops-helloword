@@ -2,11 +2,6 @@ pipeline {
     agent any
 
     stages {
-        stage('GetCode') {
-            steps {
-                git 'https://github.com/dieegopa/devops-helloword.git'
-            }
-        }
         stage('Build') {
             steps {
                 echo 'No hay que compilar nada, esto es python, instalo pytest y flask porque estoy en mac'
