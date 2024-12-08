@@ -2,29 +2,42 @@ pipeline {
     agent {label 'agent1'}
     stages {
         stage('Build') {
+			agent { label 'principal' }
             steps {
                 echo 'No hay que compilar nada, estoy en linux'
                 sh 'ls -la'
                 sh 'echo $WORKSPACE'
+				stash includes: '*', name: 'Files'
             }
         }
         stage('Test'){
             parallel {
                 stage('Unit') {
+					agent { label 'agent1' }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+							unstash 'Files'
                             sh '''
+							echo whoami
+							echo hostname
+							echo $WORKSPACE
                             . /home/jenkins/venv/bin/activate
                             export PYTHONPATH=$WORKSPACE
                             pytest --junitxml=result-unit.xml test/unit
                             '''
+							stash includes: 'result-*.xml', name: 'unit'
                         }
                     }
                 }
                 stage('Services') {
+					agent { label 'agent2' }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+							unstash 'Files'
                             sh '''
+							echo whoami
+							echo hostname
+							echo $WORKSPACE
                             . /home/jenkins/venv/bin/activate
                             export PYTHONPATH=$WORKSPACE
                             export FLASK_APP=app/api.py
@@ -33,25 +46,28 @@ pipeline {
                             sleep 5
                             pytest --junitxml=result-rest.xml test/rest
                             '''
+							stash includes: 'result-*.xml', name: 'services'
                         }
                     }
+
+				    post {
+				        always {
+				            sh '''
+				            pkill -f "flask run" || true
+				            pkill -f "wiremock" || true
+				            '''
+				        }
+				    }
                 }
             }
         }
         stage('Results') {
+			agent { label 'principal' }
             steps {
+				unstash 'unit'
+				unstash 'services'
                 junit 'result*.xml'
             }
-        }
-    }
-
-    post {
-        always {
-            sh '''
-            # Finalizar procesos de Flask y WireMock
-            pkill -f "flask run" || true
-            pkill -f "wiremock" || true
-            '''
         }
     }
 }
