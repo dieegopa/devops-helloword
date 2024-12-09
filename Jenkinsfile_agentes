@@ -56,7 +56,6 @@ pipeline {
                             export FLASK_APP=app/api.py
                             nohup flask run > flask.log 2>&1 &
                             nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
-                            sleep 5
                             pytest --junitxml=result-rest.xml test/rest
                             '''
 							stash includes: 'result-*.xml', name: 'services'
