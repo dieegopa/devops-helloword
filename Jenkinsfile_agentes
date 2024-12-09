@@ -69,8 +69,10 @@ pipeline {
                 stage('Services') {
 					agent { label 'agent2' }
                     when { expression { flag == true } }
-					options { skipDefaultCheckout() }
-					options { reuseNode true }
+					options {
+                        reuseNode true
+                        skipDefaultCheckout()
+                    }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             sh '''
