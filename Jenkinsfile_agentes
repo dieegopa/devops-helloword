@@ -1,3 +1,4 @@
+def flag = false;
 pipeline {
     agent none
     stages {
@@ -21,28 +22,32 @@ pipeline {
                 script {
                     sh '''
                         nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
+
+                        maxRetries=3
+                        attempts=0
+                        success=false
+
+                        while [ $attempts -lt $maxRetries ] && [ $success == false ]; do
+                            attempts=$((attempts + 1))
+
+                            responseCode=$(curl -o /dev/null -s -w "%{http_code}\\n" http://127.0.0.1:9090/calc/sqrt/64)
+
+                            if [ "$responseCode" == "200" ]; then
+                                success=true
+                                echo "WireMock iniciado correctamente."
+                            else
+                                echo "Intento ${attempts}: Código HTTP ${responseCode}. Reintentando en 5 segundos..."
+                                sleep 5
+                            fi
+                        done
+
+                        # Si no se obtuvo un código 200 después de los intentos
+                        if [ "$success" == false ]; then
+                            echo "No se pudo obtener un código 200 después de ${maxRetries} intentos."
+                            flag = true
+                            exit 1
+                        fi
                     '''
-
-                    def maxRetries = 3
-                    def attempts = 0
-                    def success = false
-
-                    while (attempts < maxRetries && !success) {
-                        attempts++
-                        def responseCode = sh(script: 'curl -o /dev/null -s -w "%{http_code}\\n" http://127.0.0.1:9090/calc/sqrt/64', returnStdout: true).trim()
-
-                        if (responseCode == '200') {
-                            success = true
-                            echo "Wiremock iniciado correctamente."
-                        } else {
-                            echo "Intento ${attempts}: Código HTTP ${responseCode}. Reintentando en 5 segundos..."
-                            sleep(time: 5, unit: 'SECONDS')
-                        }
-                    }
-
-                    if (!success) {
-                        error "No se ha podido iniciar Wiremock."
-                    }
                 }
             }
         }
@@ -73,6 +78,7 @@ pipeline {
                     }
                 }
                 stage('Services') {
+                    when { expression { flag == true } }
 					agent { label 'agent2' }
 					options { skipDefaultCheckout() }
                     steps {
