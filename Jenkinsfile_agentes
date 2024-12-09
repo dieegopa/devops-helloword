@@ -13,8 +13,8 @@ pipeline {
 				echo $WORKSPACE
                 '''
 				stash includes: 'app/calc.py,app/util.py,test/unit/**,*.ini', name: 'unit'
-				stash includes: 'app/**,test/**,*.ini', excludes: 'test/unit/**,test/wiremock/**,test/wiremock.jar', name: 'rest'
-				stash includes: 'test/wiremock.jar,test/wiremock/**', name: 'wiremock'
+				stash includes: 'app/**,test/**,*.ini', excludes: 'test/unit/**', name: 'rest'
+				stash includes: 'test/**', name: 'wiremock'
             }
         }
         stage('Boot wiremock') {
