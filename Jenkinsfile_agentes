@@ -18,6 +18,7 @@ pipeline {
         }
         stage('Boot wiremock') {
             agent { label 'agent2' }
+            options { skipDefaultCheckout() }
             steps {
                 script {
                     sh '''
@@ -25,15 +26,15 @@ pipeline {
 
                         maxRetries=3
                         attempts=0
-                        success=false
+                        success=0
 
-                        while [ $attempts -lt $maxRetries ] && [ $success == false ]; do
+                        while [ $attempts -lt $maxRetries ] && [ $success -eq 0 ]; do
                             attempts=$((attempts + 1))
 
                             responseCode=$(curl -o /dev/null -s -w "%{http_code}\\n" http://127.0.0.1:9090/calc/sqrt/64)
 
                             if [ "$responseCode" == "200" ]; then
-                                success=true
+                                success=1
                                 echo "WireMock iniciado correctamente."
                             else
                                 echo "Intento ${attempts}: Código HTTP ${responseCode}. Reintentando en 5 segundos..."
@@ -41,10 +42,9 @@ pipeline {
                             fi
                         done
 
-                        # Si no se obtuvo un código 200 después de los intentos
-                        if [ "$success" == false ]; then
+                        if [ $success -eq 0 ]; then
                             echo "No se pudo obtener un código 200 después de ${maxRetries} intentos."
-                            flag = true
+                            flag=true
                             exit 1
                         fi
                     '''
