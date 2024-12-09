@@ -95,7 +95,7 @@ pipeline {
                                     sh'''
                                         . /home/jenkins/venv/bin/activate
                                         export PYTHONPATH=$WORKSPACE
-                                        pytest --junitxml=result-services.xml test/services
+                                        pytest --junitxml=result-rest.xml test/rest
                                     '''
                                     stash includes: 'result-*.xml', name: 'services'
                                 } else {
@@ -106,7 +106,15 @@ pipeline {
                         }
                     }
 
-
+                    post {
+				        always {
+				            sh '''
+				            pkill -f "flask run" || true
+				            pkill -f "wiremock" || true
+				            '''
+				            cleanWs()
+				        }
+				    }
                 }
             }
         }
