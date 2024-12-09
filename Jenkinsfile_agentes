@@ -92,7 +92,11 @@ pipeline {
                                 }
 
                                 if(flagFlask && flagWiremock) {
-                                    sh(script: 'pytest --junitxml=result-rest.xml test/rest')
+                                    sh'''
+                                        . /home/jenkins/venv/bin/activate
+                                        export PYTHONPATH=$WORKSPACE
+                                        pytest --junitxml=result-services.xml test/services
+                                    '''
                                     stash includes: 'result-*.xml', name: 'services'
                                 } else {
                                     currentBuild.result = 'FAILURE'
