@@ -73,6 +73,7 @@ pipeline {
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             sh '''
+                            curl -o /dev/null -s -w "%{http_code}\n" http://127.0.0.1:9090/calc/sqrt/64
 							whoami
 						    hostname
 							echo $WORKSPACE
