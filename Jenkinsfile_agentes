@@ -37,6 +37,10 @@ pipeline {
                             sleep(5)
                         }
                     }
+
+                    if(success) {
+                        sh 'curl -i http://127.0.0.1:9090/calc/sqrt/64'
+                    }
                 }
             }
         }
