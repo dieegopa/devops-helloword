@@ -14,14 +14,13 @@ pipeline {
                 '''
 				stash includes: 'app/calc.py,app/util.py,test/unit/**,*.ini', name: 'unit'
 				stash includes: 'app/**,test/**,*.ini', excludes: 'test/unit/**', name: 'rest'
-				stash includes: 'test/**', name: 'wiremock'
             }
         }
         stage('Boot wiremock') {
             agent { label 'agent2' }
             options { skipDefaultCheckout() }
             steps {
-                unstash 'wiremock'
+                unstash 'rest'
                 sh 'nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &'
                 script {
                     def maxTries = 3
@@ -73,7 +72,6 @@ pipeline {
 					options { skipDefaultCheckout() }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-							unstash 'rest'
                             sh '''
 							whoami
 						    hostname
