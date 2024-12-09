@@ -63,7 +63,7 @@ pipeline {
                                 def maxTries = 3
                                 def tries = 0
                                 def responseCodeFlask = 000
-                                while (tries < maxTries && responseCodeFlask != 200) {
+                                while (tries < maxTries && responseCodeFlask != '200') {
                                     try {
                                         responseCode = sh(script: 'curl -s -o /dev/null -w "%{http_code}\\n" http://127.0.0.1:5000', returnStatus: true)
                                     } catch (Exception e) {
@@ -72,13 +72,13 @@ pipeline {
                                     }
                                 }
 
-                                if(responseCodeFlask == 200) {
+                                if(responseCodeFlask == '200') {
                                     flagFlask = true
                                 }
 
                                 def responseCodeWiremock = 000
 
-                                while (tries < maxTries && responseCodeWiremock != 200) {
+                                while (tries < maxTries && responseCodeWiremock != '200') {
                                     try {
                                         responseCode = sh(script: 'curl -s -o /dev/null -w "%{http_code}\\n" http://127.0.0.1:9090', returnStatus: true)
                                     } catch (Exception e) {
@@ -87,7 +87,7 @@ pipeline {
                                     }
                                 }
 
-                                if(responseCodeWiremock == 200) {
+                                if(responseCodeWiremock == '200') {
                                     flagWiremock = true
                                 }
 
