@@ -16,34 +16,6 @@ pipeline {
 				stash includes: 'app/**,test/**,*.ini', excludes: 'test/unit/**', name: 'rest'
             }
         }
-        stage('Boot wiremock') {
-            agent {
-                node {
-                    label 'agent2'
-                }
-            }
-            options { skipDefaultCheckout() }
-            steps {
-                unstash 'rest'
-                sh 'nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &'
-                script {
-                    def maxTries = 3
-                    def tries = 0
-                    def success = false
-
-                    while (!success && tries < maxTries) {
-                        try {
-                            sh 'curl -o /dev/null -s -w "%{http_code}\n" http://127.0.0.1:9090/calc/sqrt/64 '
-                            success = true
-                            flag = true
-                        } catch (Exception e) {
-                            tries++
-                            sleep(5)
-                        }
-                    }
-                }
-            }
-        }
         stage('Test'){
             parallel {
                 stage('Unit') {
@@ -71,18 +43,13 @@ pipeline {
                     }
                 }
                 stage('Services') {
-					agent {
-                        node {
-                            label 'agent2'
-                            reuseNode true
-                        }
-                    }
+					agent { label 'agent2' }
                     when { expression { flag == true } }
 					options { skipDefaultCheckout() }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            unstash 'rest'
                             sh '''
-                            ps aux
 							whoami
 						    hostname
 							echo $WORKSPACE
@@ -90,6 +57,8 @@ pipeline {
                             export PYTHONPATH=$WORKSPACE
                             export FLASK_APP=app/api.py
                             nohup flask run > flask.log 2>&1 &
+                            nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
+                            sleep 5
                             pytest --junitxml=result-rest.xml test/rest
                             '''
 							stash includes: 'result-*.xml', name: 'services'
