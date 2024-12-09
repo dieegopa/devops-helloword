@@ -37,10 +37,6 @@ pipeline {
                             sleep(5)
                         }
                     }
-
-                    if(success) {
-                        sh 'curl -i http://127.0.0.1:9090/calc/sqrt/64'
-                    }
                 }
             }
         }
@@ -74,6 +70,7 @@ pipeline {
 					agent { label 'agent2' }
                     when { expression { flag == true } }
 					options { skipDefaultCheckout() }
+					options { reuseNode true }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             sh '''
