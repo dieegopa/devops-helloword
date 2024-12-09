@@ -19,7 +19,9 @@ pipeline {
             agent { label 'agent2' }
             steps {
                 script {
-                    nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
+                    sh '''
+                        nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
+                    '''
 
                     def maxRetries = 3
                     def attempts = 0
