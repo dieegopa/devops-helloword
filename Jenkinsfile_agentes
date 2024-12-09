@@ -71,8 +71,8 @@ pipeline {
                     }
                 }
                 stage('Services') {
-                    when { expression { flag == true } }
 					agent { label 'agent2' }
+                    when { expression { flag == true } }
 					options { skipDefaultCheckout() }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
@@ -89,16 +89,6 @@ pipeline {
 							stash includes: 'result-*.xml', name: 'services'
                         }
                     }
-
-				    post {
-				        always {
-				            sh '''
-				            pkill -f "flask run" || true
-				            pkill -f "wiremock" || true
-				            '''
-				            cleanWs()
-				        }
-				    }
                 }
             }
         }
