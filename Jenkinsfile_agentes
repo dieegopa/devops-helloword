@@ -106,15 +106,7 @@ pipeline {
                         }
                     }
 
-                    post {
-				        always {
-				            sh '''
-				            pkill -f "flask run" || true
-				            pkill -f "wiremock" || true
-				            '''
-				            cleanWs()
-				        }
-				    }
+
                 }
             }
         }
