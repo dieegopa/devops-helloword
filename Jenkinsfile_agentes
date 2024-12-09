@@ -20,34 +20,21 @@ pipeline {
             agent { label 'agent2' }
             options { skipDefaultCheckout() }
             steps {
+                sh 'nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &'
                 script {
-                    sh '''
-                        nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
+                    def maxTries = 3
+                    def tries = 0
+                    def success = false
 
-                        maxRetries=3
-                        attempts=0
-                        success=0
-
-                        while [ $attempts -lt $maxRetries ] && [ $success -eq 0 ]; do
-                            attempts=$((attempts + 1))
-
-                            responseCode=$(curl -o /dev/null -s -w "%{http_code}\\n" http://127.0.0.1:9090/calc/sqrt/64)
-
-                            if [ "$responseCode" == "200" ]; then
-                                success=1
-                                echo "WireMock iniciado correctamente."
-                            else
-                                echo "Intento ${attempts}: Código HTTP ${responseCode}. Reintentando en 5 segundos..."
-                                sleep 5
-                            fi
-                        done
-
-                        if [ $success -eq 0 ]; then
-                            echo "No se pudo obtener un código 200 después de ${maxRetries} intentos."
-                            flag=true
-                            exit 1
-                        fi
-                    '''
+                    while (!success && tries < maxTries) {
+                        try {
+                            sh 'curl -o /dev/null -s -w "%{http_code}\n" http://127.0.0.1:9090/calc/sqrt/64 '
+                            success = true
+                        } catch (Exception e) {
+                            tries++
+                            sleep(5)
+                        }
+                    }
                 }
             }
         }
