@@ -92,9 +92,7 @@ pipeline {
                                 }
 
                                 if(flagFlask && flagWiremock) {
-                                    sh '''
-                                        pytest --junitxml=result-rest.xml test/rest
-                                    '''
+                                    sh(script: 'pytest --junitxml=result-rest.xml test/rest')
                                     stash includes: 'result-*.xml', name: 'services'
                                 } else {
                                     currentBuild.result = 'FAILURE'
