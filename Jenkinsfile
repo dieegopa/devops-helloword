@@ -25,7 +25,7 @@ pipeline {
                             sh '''
                             export PYTHONPATH=$WORKSPACE
                             export FLASK_APP=app/api.py
-                            nohup flask run > flask.log 2>&1 &
+                            nohup python3 -m flask run > flask.log 2>&1 &
                             nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
                             sleep 10
                             python3 -m pytest --junitxml=result-rest.xml test/rest
