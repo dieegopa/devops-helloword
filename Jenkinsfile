@@ -3,16 +3,8 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'No hay que compilar nada, esto es python, instalo pytest y flask porque estoy en mac'
+                echo 'No hay que compilar nada, esto es python'
                 sh 'ls -la'
-                sh 'echo $WORKSPACE'
-                sh '''
-                python3 -m venv venv
-                source venv/bin/activate
-                export PYTHONPATH=$WORKSPACE
-                pip install pytest
-                pip install flask
-                '''
             }
         }
         stage('Test'){
@@ -21,9 +13,8 @@ pipeline {
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             sh '''
-                            source venv/bin/activate
                             export PYTHONPATH=$WORKSPACE
-                            pytest --junitxml=result-unit.xml test/unit
+                            python3 -m pytest --junitxml=result-unit.xml test/unit
                             '''
                         }
                     }
@@ -32,13 +23,12 @@ pipeline {
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             sh '''
-                            source venv/bin/activate
+                            export PYTHONPATH=$WORKSPACE
                             export FLASK_APP=app/api.py
                             nohup flask run > flask.log 2>&1 &
                             nohup java -jar test/wiremock.jar --port 9090 --root-dir test/wiremock > wiremock.log 2>&1 &
-                            sleep 5
-                            export PYTHONPATH=$WORKSPACE
-                            pytest --junitxml=result-rest.xml test/rest
+                            sleep 10
+                            python3 -m pytest --junitxml=result-rest.xml test/rest
                             '''
                         }
                     }
