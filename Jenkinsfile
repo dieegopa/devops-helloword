@@ -56,6 +56,18 @@ pipeline {
                         }
                     }
                 }
+                stage('Coverage') {
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh '''
+                            sleep 10
+                            python3 -m coverage xml -o coverage.xml
+                            python3 -m coverage report -m
+                            '''
+                            cobertura coberturaReportFile : 'coverage.xml', onlyStable : false, conditionalCoverageTargets : '95,85,0',  lineCoverageTargets : '90,80,0'
+                        }
+                    }
+                }
             }
         }
     }
