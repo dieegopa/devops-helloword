@@ -29,6 +29,14 @@ pipeline {
                         }
                     }
                 }
+                stage('Static') {
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh 'python3 -m flake8 --format=pylint --exit-zero app > flake8.out'
+                            recordIssues tools: [flake8(name: 'Flake8', pattern: 'flake8.out')], qualityGates: [[integerThreshold: 8, threshold: 8.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 10, threshold: 10.0, type: 'TOTAL']]
+                        }
+                    }
+                }
             }
         }
     }
