@@ -37,6 +37,14 @@ pipeline {
                         }
                     }
                 }
+                stage('Security Test') {
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh 'python3 -m bandit --exit-zero -r . -f custom -o bandit.out --msg-template "{abspath}:{line}: [{test_id}] {msg}"'
+                            recordIssues tools: [pyLint(name: 'Bandit', pattern: 'bandit.out')], qualityGates: [[integerThreshold: 2, threshold: 2.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 4, threshold: 4.0, type: 'TOTAL']]
+                        }
+                    }
+                }
             }
         }
     }
