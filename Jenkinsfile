@@ -45,6 +45,17 @@ pipeline {
                         }
                     }
                 }
+                stage('Performance') {
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh'''
+                            sleep 10
+                            /opt/homebrew/bin/jmeter -n -t test/jmeter/flask.jmx -f -l flask.jtl
+                            '''
+                            perfReport sourceDataFiles: 'flask.jtl'
+                        }
+                    }
+                }
             }
         }
     }
