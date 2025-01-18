@@ -1,12 +1,6 @@
 pipeline {
     agent any
     stages {
-        stage('Build') {
-            steps {
-                echo 'No hay que compilar nada, esto es python'
-                sh 'ls -la'
-            }
-        }
         stage('Test'){
             parallel {
                 stage('Unit') {
