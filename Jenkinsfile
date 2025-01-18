@@ -8,8 +8,9 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             sh '''
                             export PYTHONPATH=$WORKSPACE
-                            python3 -m pytest --junitxml=result-unit.xml test/unit
+                            python3 -m coverage run --branch --source=app --omit=app/init_py,app/api.py -m pytest --junitxml=result-unit.xml test/unit
                             '''
+                            junit 'result-unit.xml'
                         }
                     }
                 }
