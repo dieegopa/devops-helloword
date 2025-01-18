@@ -25,14 +25,10 @@ pipeline {
                             sleep 10
                             python3 -m pytest --junitxml=result-rest.xml test/rest
                             '''
+                            junit 'result-rest.xml'
                         }
                     }
                 }
-            }
-        }
-        stage('Results') {
-            steps {
-                junit 'result*.xml'
             }
         }
     }
