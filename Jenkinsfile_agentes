@@ -79,6 +79,29 @@ pipeline {
                         }
                     }
                 }
+                stage('Performance') {
+                    agent { label 'agent2' }
+					options { skipDefaultCheckout() }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh'''
+                            sleep 10
+                            /home/jenkins/apache-jmeter-5.6.3/bin/./jmeter -n -t test/jmeter/flask.jmx -f -l flask.jtl
+                            '''
+                            stash includes: 'flask.jtl', name: 'performance-results'
+                        }
+                    }
+
+                    post {
+				        always {
+				            sh '''
+				            pkill -f "flask run" || true
+				            pkill -f "wiremock" || true
+				            '''
+				            cleanWs()
+				        }
+				    }
+                }
             }
         }
         stage('Results') {
