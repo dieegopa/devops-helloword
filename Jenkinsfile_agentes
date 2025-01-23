@@ -53,6 +53,19 @@ pipeline {
                         }
                     }
                 }
+                stage('Static') {
+                    agent { label 'agent1' }
+					options { skipDefaultCheckout() }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh '''
+                            sleep 10
+                            python3 -m flake8 --format=pylint --exit-zero app > flake8.out
+                            '''
+                            stash includes: 'flake8.out', name: 'static-results'
+                        }
+                    }
+                }
             }
         }
         stage('Results') {
