@@ -25,17 +25,10 @@ pipeline {
 							whoami
 						    hostname
 							echo $WORKSPACE
-                            . /home/jenkins/venv/bin/activate
                             export PYTHONPATH=$WORKSPACE
-                            pytest --junitxml=result-unit.xml test/unit
+                            python3 -m coverage run --branch --source=app --omit=app/init_py,app/api.py -m pytest --junitxml=result-unit.xml test/unit
                             '''
-							stash includes: 'result-*.xml', name: 'unit'
-                        }
-                    }
-
-                    post {
-                        always {
-                            cleanWs()
+							stash includes: 'result-unit.xml', name: 'unit-results'
                         }
                     }
                 }
