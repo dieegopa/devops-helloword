@@ -102,6 +102,26 @@ pipeline {
 				        }
 				    }
                 }
+                stage('Coverage') {
+                    agent { label 'agent1' }
+					options { skipDefaultCheckout() }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh '''
+                            sleep 10
+                            python3 -m coverage xml -o coverage.xml
+                            python3 -m coverage report -m
+                            '''
+                            stash includes: 'coverage.xml', name: 'coverage-results'
+                        }
+                    }
+
+                    post {
+                        always {
+                            cleanWs()
+                        }
+                    }
+                }
             }
         }
         stage('Results') {
