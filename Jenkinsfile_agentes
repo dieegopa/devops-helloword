@@ -66,6 +66,19 @@ pipeline {
                         }
                     }
                 }
+                stage('Security Test') {
+                    agent { label 'agent2' }
+					options { skipDefaultCheckout() }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh '''
+                            sleep 10
+                            python3 -m bandit --exit-zero -r . -f custom -o bandit.out --msg-template "{abspath}:{line}: [{test_id}] {msg}"
+                            '''
+                            stash includes: 'bandit.out', name: 'security-results'
+                        }
+                    }
+                }
             }
         }
         stage('Results') {
