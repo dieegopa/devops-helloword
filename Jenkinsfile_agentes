@@ -133,9 +133,19 @@ pipeline {
 				hostname
 				echo $WORKSPACE
                 '''
-				unstash 'unit'
-				unstash 'services'
+				unstash 'unit-results'
+				unstash 'services-results'
+				unstash 'static-results'
+				unstash 'security-results'
+				unstash 'performance-results'
+				unstash 'coverage-results'
                 junit 'result*.xml'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    recordIssues tools: [flake8(name: 'Flake8', pattern: 'flake8.out')], qualityGates: [[integerThreshold: 8, threshold: 8.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 10, threshold: 10.0, type: 'TOTAL']]
+                    recordIssues tools: [pyLint(name: 'Bandit', pattern: 'bandit.out')], qualityGates: [[integerThreshold: 2, threshold: 2.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 4, threshold: 4.0, type: 'TOTAL']]
+                    perfReport sourceDataFiles: 'flask.jtl'
+                    cobertura coberturaReportFile : 'coverage.xml', onlyStable : false, conditionalCoverageTargets : '95,85,0',  lineCoverageTargets : '90,80,0'
+                }
             }
 
             post {
