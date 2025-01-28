@@ -28,7 +28,7 @@ pipeline {
                             export PYTHONPATH=$WORKSPACE
                             python3 -m coverage run --branch --source=app --omit=app/init_py,app/api.py -m pytest --junitxml=result-unit.xml test/unit
                             '''
-							stash includes: 'result-unit.xml', name: 'unit-results'
+                            junit 'result-unit.xml'
                         }
                     }
                 }
@@ -49,7 +49,7 @@ pipeline {
                             sleep 10
                             python3 -m pytest --junitxml=result-rest.xml test/rest
                             '''
-							stash includes: 'result-rest.xml', name: 'services-results'
+                            junit 'result-rest.xml'
                         }
                     }
                 }
@@ -62,7 +62,7 @@ pipeline {
                             sleep 10
                             python3 -m flake8 --format=pylint --exit-zero app > flake8.out
                             '''
-                            stash includes: 'flake8.out', name: 'static-results'
+                            recordIssues tools: [flake8(name: 'Flake8', pattern: 'flake8.out')], qualityGates: [[integerThreshold: 8, threshold: 8.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 10, threshold: 10.0, type: 'TOTAL']]
                         }
                     }
                 }
@@ -75,7 +75,7 @@ pipeline {
                             sleep 10
                             python3 -m bandit --exit-zero -r . -f custom -o bandit.out --msg-template "{abspath}:{line}: [{test_id}] {msg}"
                             '''
-                            stash includes: 'bandit.out', name: 'security-results'
+                            recordIssues tools: [pyLint(name: 'Bandit', pattern: 'bandit.out')], qualityGates: [[integerThreshold: 2, threshold: 2.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 4, threshold: 4.0, type: 'TOTAL']]
                         }
                     }
                 }
@@ -88,7 +88,7 @@ pipeline {
                             sleep 10
                             /home/jenkins/apache-jmeter-5.6.3/bin/./jmeter -n -t test/jmeter/flask.jmx -f -l flask.jtl
                             '''
-                            stash includes: 'flask.jtl', name: 'performance-results'
+                            perfReport sourceDataFiles: 'flask.jtl'
                         }
                     }
 
@@ -112,7 +112,7 @@ pipeline {
                             python3 -m coverage xml -o coverage.xml
                             python3 -m coverage report -m
                             '''
-                            stash includes: 'coverage.xml', name: 'coverage-results'
+                            cobertura coberturaReportFile : 'coverage.xml', onlyStable : false, conditionalCoverageTargets : '95,85,0',  lineCoverageTargets : '90,80,0'
                         }
                     }
 
@@ -123,36 +123,6 @@ pipeline {
                     }
                 }
             }
-        }
-        stage('Results') {
-			agent { label 'principal' }
-			options { skipDefaultCheckout() }
-            steps {
-                sh '''
-				whoami
-				hostname
-				echo $WORKSPACE
-                '''
-				unstash 'unit-results'
-				unstash 'services-results'
-				unstash 'static-results'
-				unstash 'security-results'
-				unstash 'performance-results'
-				unstash 'coverage-results'
-                junit 'result*.xml'
-                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    recordIssues tools: [flake8(name: 'Flake8', pattern: 'flake8.out')], qualityGates: [[integerThreshold: 8, threshold: 8.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 10, threshold: 10.0, type: 'TOTAL']]
-                    recordIssues tools: [pyLint(name: 'Bandit', pattern: 'bandit.out')], qualityGates: [[integerThreshold: 2, threshold: 2.0, type: 'TOTAL'], [criticality: 'ERROR', integerThreshold: 4, threshold: 4.0, type: 'TOTAL']]
-                    perfReport sourceDataFiles: 'flask.jtl'
-                    cobertura coberturaReportFile : 'coverage.xml', onlyStable : false, conditionalCoverageTargets : '95,85,0',  lineCoverageTargets : '90,80,0'
-                }
-            }
-
-            post {
-                always {
-                    cleanWs()
-				}
-			}
         }
     }
 }
